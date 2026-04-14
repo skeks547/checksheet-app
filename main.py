@@ -106,11 +106,11 @@ class CheckSheetApp(App):
         return RootWidget()
 
     def request_android_permissions(self):
-        permissions = [Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE]
-        if api_version >= 33:
-            # Android 13 이상에서 파일 접근을 위해 필요한 경우 추가 권한 요청
-            # 엑셀/PDF 파일 접근을 위해 MANAGE_EXTERNAL_STORAGE가 필요할 수 있음
-            pass
+        permissions = [
+            Permission.READ_EXTERNAL_STORAGE, 
+            Permission.WRITE_EXTERNAL_STORAGE,
+            Permission.MANAGE_EXTERNAL_STORAGE
+        ]
         request_permissions(permissions)
 
     def on_start(self):
@@ -131,12 +131,19 @@ class CheckSheetApp(App):
             json.dump({'excel_path': self.excel_path, 'pdf_folder_path': self.pdf_folder_path}, f, ensure_ascii=False)
 
     def open_file_chooser(self, mode='file'):
-        start_path = "/sdcard" if platform == 'android' else os.getcwd()
-        file_chooser = FileChooserListView(path=start_path)
-        if mode == 'dir': file_chooser.dirselect = True
+        # 안드로이드 최상위 경로 설정
+        start_path = "/storage/emulated/0" if platform == 'android' else os.getcwd()
         
         content = BoxLayout(orientation='vertical')
-        popup = Popup(title="선택", content=content, size_hint=(0.9, 0.9))
+        file_chooser = FileChooserListView(path=start_path)
+        
+        # 엑셀 파일만 보이게 필터 설정
+        if mode == 'file':
+            file_chooser.filters = ['*.xlsx']
+        else:
+            file_chooser.dirselect = True
+        
+        popup = Popup(title="파일/폴더 선택", content=content, size_hint=(0.9, 0.9))
         
         def on_select(instance):
             if file_chooser.selection:
