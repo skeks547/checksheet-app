@@ -23,31 +23,31 @@ from kivy.utils import platform
 from kivy.clock import Clock
 from kivy.metrics import dp
 
-# --- 1. 한글 폰트 전역 등록 ---
+# --- 1. 한글 폰트 전역 등록 (강력한 방식) ---
 FONT_NAME = "font.ttf"
-# 안드로이드에서는 파일이 앱 폴더 내에 있으므로 상대 경로로 시도하고, 안되면 절대 경로 시도
-if not os.path.exists(FONT_NAME) and platform == 'android':
+if platform == 'android':
+    # 안드로이드 앱 설치 경로 확인
     FONT_NAME = os.path.join(os.path.dirname(__file__), "font.ttf")
 
-DEFAULT_FONT = "Roboto"
 if os.path.exists(FONT_NAME):
     try:
+        # 'Roboto'라는 이름을 가로채서 우리 폰트로 등록하면 모든 기본 위젯에 적용됨
+        LabelBase.register(name="Roboto", fn_regular=FONT_NAME)
         LabelBase.register(name="Korean", fn_regular=FONT_NAME)
-        DEFAULT_FONT = "Korean"
     except: pass
 
-# --- 2. 모든 위젯에 한글 폰트 강제 적용 ---
-KV_UI = f"""
+# --- 2. 모든 위젯 및 파일 선택기 전용 스타일 설정 ---
+KV_UI = """
 <Label>:
-    font_name: '{DEFAULT_FONT}'
+    font_name: 'Korean'
 <Button>:
-    font_name: '{DEFAULT_FONT}'
+    font_name: 'Korean'
 <TextInput>:
-    font_name: '{DEFAULT_FONT}'
+    font_name: 'Korean'
 <FileChooserLabel>:
-    font_name: '{DEFAULT_FONT}'
+    font_name: 'Korean'
 <Popup>:
-    title_font: '{DEFAULT_FONT}'
+    title_font: 'Korean'
 
 <ListScreen>:
     BoxLayout:
@@ -297,7 +297,8 @@ class CheckSheetApp(App):
         if mode == 'dir': fc.dirselect = True
         
         content = BoxLayout(orientation='vertical', padding=dp(5))
-        path_label = Label(text=fc.path, size_hint_y=None, height=dp(40), shorten=True, shorten_from='left')
+        # 경로 표시 라벨에 한글 폰트 명시
+        path_label = Label(text=fc.path, size_hint_y=None, height=dp(40), shorten=True, shorten_from='left', font_name='Korean')
         fc.bind(path=lambda obj, val: setattr(path_label, 'text', val))
         
         content.add_widget(path_label)
