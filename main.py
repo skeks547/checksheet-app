@@ -23,14 +23,29 @@ from kivy.utils import platform
 from kivy.clock import Clock
 from kivy.metrics import dp
 
-# --- UI 설정 (main.py에 통합하여 안정성 확보) ---
-KV_UI = """
+# --- 한글 폰트 등록 및 전역 설정 ---
+FONT_NAME = "font.ttf"
+if os.path.exists(FONT_NAME):
+    LabelBase.register(name="Korean", fn_regular=FONT_NAME)
+    DEFAULT_FONT = "Korean"
+else:
+    DEFAULT_FONT = "Roboto" # 폰트 없을 시 기본값
+
+# --- UI 설정 (모든 위젯에 Korean 폰트 적용) ---
+KV_UI = f"""
+<Label>:
+    font_name: '{DEFAULT_FONT}'
+<Button>:
+    font_name: '{DEFAULT_FONT}'
+<TextInput>:
+    font_name: '{DEFAULT_FONT}'
+
 <ListScreen>:
     BoxLayout:
         orientation: 'vertical'
         canvas.before:
             Color:
-                rgba: 0.15, 0.15, 0.15, 1
+                rgba: 0.1, 0.1, 0.1, 1
             Rectangle:
                 pos: self.pos
                 size: self.size
@@ -49,14 +64,14 @@ KV_UI = """
                     size: self.size
 
             Button:
-                text: '설정'
+                text: '접속설정'
                 size_hint_x: 0.2
                 on_release: app.open_smb_settings()
             Button:
-                text: '엑셀 선택'
+                text: '엑셀선택'
                 on_release: app.select_source('excel')
             Button:
-                text: 'PDF 폴더'
+                text: 'PDF폴더'
                 on_release: app.select_source('pdf')
             Button:
                 text: '저장'
@@ -70,7 +85,7 @@ KV_UI = """
             height: '45dp'
             canvas.before:
                 Color:
-                    rgba: 0.3, 0.3, 0.3, 1
+                    rgba: 0.25, 0.25, 0.25, 1
                 Rectangle:
                     pos: self.pos
                     size: self.size
@@ -105,7 +120,7 @@ KV_UI = """
             id: rv
             viewclass: 'RowWidget'
             RecycleBoxLayout:
-                default_size: None, dp(56)
+                default_size: None, dp(60)
                 default_size_hint: 1, None
                 size_hint_y: None
                 height: self.minimum_height
@@ -131,7 +146,7 @@ KV_UI = """
                 font_size: '20sp'
                 bold: True
             Button:
-                text: 'X 닫기'
+                text: '닫기'
                 size_hint_x: None
                 width: dp(100)
                 on_release: app.close_viewer()
@@ -164,10 +179,10 @@ KV_UI = """
 
 <RowWidget>:
     orientation: 'horizontal'
-    padding: [5, 2]
+    padding: [2, 2]
     canvas.before:
         Color:
-            rgba: 0.25, 0.25, 0.25, 1
+            rgba: 0.2, 0.2, 0.2, 1
         Rectangle:
             pos: self.pos
             size: self.size
@@ -177,6 +192,7 @@ KV_UI = """
     Button:
         text: root.item_code
         size_hint_x: 0.3
+        background_normal: ''
         background_color: 0.2, 0.4, 0.6, 1
         on_release: root.open_pdf()
     Label:
@@ -185,37 +201,26 @@ KV_UI = """
     Button:
         text: 'V' if root.complete else ''
         size_hint_x: 0.15
-        background_color: (0, 1, 0, 0.5) if root.complete else (0.4, 0.4, 0.4, 1)
+        background_normal: ''
+        background_color: (0, 1, 0, 0.5) if root.complete else (0.3, 0.3, 0.3, 1)
         on_release: root.on_checkbox_active('complete')
     Button:
         text: 'V' if root.shortage else ''
         size_hint_x: 0.15
-        background_color: (1, 1, 0, 0.5) if root.shortage else (0.4, 0.4, 0.4, 1)
+        background_normal: ''
+        background_color: (1, 1, 0, 0.5) if root.shortage else (0.3, 0.3, 0.3, 1)
         on_release: root.on_checkbox_active('shortage')
     Button:
         text: 'V' if root.rework else ''
         size_hint_x: 0.15
-        background_color: (1, 0, 0, 0.5) if root.rework else (0.4, 0.4, 0.4, 1)
+        background_normal: ''
+        background_color: (1, 0, 0, 0.5) if root.rework else (0.3, 0.3, 0.3, 1)
         on_release: root.on_checkbox_active('rework')
 """
 
 # 안드로이드 설정
 if platform == 'android':
     Window.softinput_mode = 'below_target'
-
-# 한글 폰트
-try:
-    FONT_NAME = "font.ttf"
-    if os.path.exists(FONT_NAME):
-        LabelBase.register(name="Roboto", fn_regular=FONT_NAME)
-except: pass
-
-# SMB 라이브러리
-SMB_AVAILABLE = False
-try:
-    from smb.SMBConnection import SMBConnection
-    SMB_AVAILABLE = True
-except: pass
 
 SETTINGS_FILE = 'settings.json'
 LOCAL_BASE = "/sdcard/Download/CheckSheet" if platform == 'android' else os.path.join(os.getcwd(), "CheckSheet_Data")
@@ -245,7 +250,6 @@ class RowWidget(BoxLayout):
                 break
 
 class CheckSheetApp(App):
-    # 설정 프로퍼티
     excel_path = StringProperty('')
     pdf_folder_path = StringProperty('')
     pdf_source = StringProperty('local')
@@ -260,7 +264,7 @@ class CheckSheetApp(App):
     sort_indicator_rew = StringProperty('')
     sort_states = {}
 
-    # 뷰어 프로퍼티 (KV 바인딩용)
+    # 뷰어 프로퍼티
     viewer_title = StringProperty('')
     viewer_image_source = StringProperty('')
     current_view_idx = NumericProperty(-1)
@@ -344,7 +348,6 @@ class CheckSheetApp(App):
         elif col == 'complete': self.sort_indicator_comp = ind
         elif col == 'shortage': self.sort_indicator_short = ind
         elif col == 'rework': self.sort_indicator_rew = ind
-        
         rv.data = sorted(rv.data, key=lambda x: str(x.get(col, '')).lower(), reverse=(new_s == 'desc'))
         rv.refresh_from_data()
 
