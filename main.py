@@ -31,7 +31,7 @@ if os.path.exists(FONT_NAME):
 else:
     DEFAULT_FONT = "Roboto"
 
-# --- UI 설정 (FileChooser 내부까지 폰트 적용) ---
+# --- UI 설정 (FileChooser 레이블 폰트까지 확실히 적용) ---
 KV_UI = f"""
 <Label>:
     font_name: '{DEFAULT_FONT}'
@@ -65,15 +65,9 @@ KV_UI = f"""
                     pos: self.pos
                     size: self.size
 
-            Button:
-                text: '접속설정'
-                on_release: app.open_smb_settings()
-            Button:
-                text: '엑셀선택'
-                on_release: app.select_source('excel')
-            Button:
-                text: 'PDF폴더'
-                on_release: app.select_source('pdf')
+            Button: text: '접속설정'; on_release: app.open_smb_settings()
+            Button: text: '엑셀선택'; on_release: app.select_source('excel')
+            Button: text: 'PDF폴더'; on_release: app.select_source('pdf')
             Button:
                 text: '저장'
                 background_color: 0.2, 0.7, 0.3, 1
@@ -84,36 +78,15 @@ KV_UI = f"""
             size_hint_y: None
             height: '45dp'
             canvas.before:
-                Color:
-                    rgba: 0.25, 0.25, 0.25, 1
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
+                Color: rgba: 0.25, 0.25, 0.25, 1
+                Rectangle: pos: self.pos; size: self.size
             
-            Button:
-                text: 'No' + app.sort_indicator_no
-                size_hint_x: 0.1
-                on_release: app.sort_by('no')
-            Button:
-                text: '품목코드' + app.sort_indicator_code
-                size_hint_x: 0.3
-                on_release: app.sort_by('item_code')
-            Button:
-                text: '수량' + app.sort_indicator_qty
-                size_hint_x: 0.15
-                on_release: app.sort_by('quantity')
-            Button:
-                text: '완료' + app.sort_indicator_comp
-                size_hint_x: 0.15
-                on_release: app.sort_by('complete')
-            Button:
-                text: '부족' + app.sort_indicator_short
-                size_hint_x: 0.15
-                on_release: app.sort_by('shortage')
-            Button:
-                text: '재작업' + app.sort_indicator_rew
-                size_hint_x: 0.15
-                on_release: app.sort_by('rework')
+            Button: text: 'No'+app.sort_indicator_no; size_hint_x: 0.1; on_release: app.sort_by('no')
+            Button: text: '품목코드'+app.sort_indicator_code; size_hint_x: 0.3; on_release: app.sort_by('item_code')
+            Button: text: '수량'+app.sort_indicator_qty; size_hint_x: 0.15; on_release: app.sort_by('quantity')
+            Button: text: '완료'+app.sort_indicator_comp; size_hint_x: 0.15; on_release: app.sort_by('complete')
+            Button: text: '부족'+app.sort_indicator_short; size_hint_x: 0.15; on_release: app.sort_by('shortage')
+            Button: text: '재작업'+app.sort_indicator_rew; size_hint_x: 0.15; on_release: app.sort_by('rework')
 
         # 데이터 리스트
         CheckSheetRV:
@@ -131,95 +104,53 @@ KV_UI = f"""
     BoxLayout:
         orientation: 'vertical'
         canvas.before:
-            Color:
-                rgba: 0, 0, 0, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
+            Color: rgba: 0, 0, 0, 1
+            Rectangle: pos: self.pos; size: self.size
         padding: dp(10)
         
         BoxLayout:
-            size_hint_y: None
-            height: dp(60)
-            Label:
-                text: app.viewer_title
-                font_size: '20sp'
-                bold: True
-            Button:
-                text: '닫기'
-                size_hint_x: None
-                width: dp(100)
-                on_release: app.close_viewer()
+            size_hint_y: None; height: dp(60)
+            Label: text: app.viewer_title; font_size: '20sp'; bold: True
+            Button: text: '닫기'; size_hint_x: None; width: dp(100); on_release: app.close_viewer()
 
         Image:
-            id: pdf_img
-            source: app.viewer_image_source
-            allow_stretch: True
-            keep_ratio: True
+            id: pdf_img; source: app.viewer_image_source; allow_stretch: True; keep_ratio: True
             on_touch_down: app.on_viewer_touch_down(args[1])
             on_touch_up: app.on_viewer_touch_up(args[1])
 
         BoxLayout:
-            size_hint_y: None
-            height: dp(80)
-            spacing: dp(10)
-            padding: [0, dp(10)]
-            Button:
-                text: '완료'
-                background_color: app.color_comp
-                on_release: app.update_viewer_status('complete')
-            Button:
-                text: '부족'
-                background_color: app.color_short
-                on_release: app.update_viewer_status('shortage')
-            Button:
-                text: '재작업'
-                background_color: app.color_rew
-                on_release: app.update_viewer_status('rework')
+            size_hint_y: None; height: dp(80); spacing: dp(10); padding: [0, dp(10)]
+            Button: text: '완료'; background_color: app.color_comp; on_release: app.update_viewer_status('complete')
+            Button: text: '부족'; background_color: app.color_short; on_release: app.update_viewer_status('shortage')
+            Button: text: '재작업'; background_color: app.color_rew; on_release: app.update_viewer_status('rework')
 
 <RowWidget>:
     orientation: 'horizontal'
     padding: [2, 2]
     canvas.before:
-        Color:
-            rgba: 0.2, 0.2, 0.2, 1
-        Rectangle:
-            pos: self.pos
-            size: self.size
-    Label:
-        text: root.no
-        size_hint_x: 0.1
-    Button:
-        text: root.item_code
-        size_hint_x: 0.3
-        background_normal: ''
-        background_color: 0.2, 0.4, 0.6, 1
-        on_release: root.open_pdf()
-    Label:
-        text: root.quantity
-        size_hint_x: 0.15
+        Color: rgba: 0.2, 0.2, 0.2, 1
+        Rectangle: pos: self.pos; size: self.size
+    Label: text: root.no; size_hint_x: 0.1
+    Button: text: root.item_code; size_hint_x: 0.3; background_color: 0.2, 0.4, 0.6, 1; on_release: root.open_pdf()
+    Label: text: root.quantity; size_hint_x: 0.15
     Button:
         text: 'V' if root.complete else ''
-        size_hint_x: 0.15
-        background_normal: ''
+        size_hint_x: 0.15; background_normal: ''
         background_color: (0, 1, 0, 0.5) if root.complete else (0.3, 0.3, 0.3, 1)
         on_release: root.on_checkbox_active('complete')
     Button:
         text: 'V' if root.shortage else ''
-        size_hint_x: 0.15
-        background_normal: ''
+        size_hint_x: 0.15; background_normal: ''
         background_color: (1, 1, 0, 0.5) if root.shortage else (0.3, 0.3, 0.3, 1)
         on_release: root.on_checkbox_active('shortage')
     Button:
         text: 'V' if root.rework else ''
-        size_hint_x: 0.15
-        background_normal: ''
+        size_hint_x: 0.15; background_normal: ''
         background_color: (1, 0, 0, 0.5) if root.rework else (0.3, 0.3, 0.3, 1)
         on_release: root.on_checkbox_active('rework')
 """
 
-if platform == 'android':
-    Window.softinput_mode = 'below_target'
+if platform == 'android': Window.softinput_mode = 'below_target'
 
 SETTINGS_FILE = 'settings.json'
 LOCAL_BASE = "/sdcard/Download/CheckSheet" if platform == 'android' else os.path.join(os.getcwd(), "CheckSheet_Data")
@@ -230,48 +161,27 @@ class ViewerScreen(Screen): pass
 class CheckSheetRV(RecycleView): pass
 
 class RowWidget(BoxLayout):
-    no = StringProperty('')
-    item_code = StringProperty('')
-    quantity = StringProperty('')
-    complete = BooleanProperty(False)
-    shortage = BooleanProperty(False)
-    rework = BooleanProperty(False)
-
-    def on_checkbox_active(self, checkbox_type):
-        App.get_running_app().update_item_status(self.item_code, self.no, checkbox_type)
-
+    no = StringProperty(''); item_code = StringProperty(''); quantity = StringProperty('')
+    complete = BooleanProperty(False); shortage = BooleanProperty(False); rework = BooleanProperty(False)
+    def on_checkbox_active(self, ct): App.get_running_app().update_item_status(self.item_code, self.no, ct)
     def open_pdf(self):
-        app = App.get_running_app()
-        rv = app.root.get_screen('list').ids.rv
+        app = App.get_running_app(); rv = app.root.get_screen('list').ids.rv
         for i, d in enumerate(rv.data):
             if d['item_code'] == self.item_code and d['no'] == self.no:
-                app.open_pdf_viewer(i)
-                break
+                app.open_pdf_viewer(i); break
 
 class CheckSheetApp(App):
-    excel_path = StringProperty('')
-    pdf_folder_path = StringProperty('')
-    pdf_source = StringProperty('local')
-    smb_config = DictProperty({'ip': '', 'user': '', 'pass': ''})
-    
-    # 정렬 지시자
+    excel_path = StringProperty(''); pdf_folder_path = StringProperty('')
+    pdf_source = StringProperty('local'); smb_config = DictProperty({'ip': '', 'user': '', 'pass': ''})
     sort_indicator_no = StringProperty(''); sort_indicator_code = StringProperty(''); sort_indicator_qty = StringProperty('')
     sort_indicator_comp = StringProperty(''); sort_indicator_short = StringProperty(''); sort_indicator_rew = StringProperty('')
-    sort_states = {}
-
-    # 뷰어 프로퍼티
-    viewer_title = StringProperty(''); viewer_image_source = StringProperty('')
-    current_view_idx = NumericProperty(-1)
-    color_comp = ListProperty([0.3, 0.3, 0.3, 1]); color_short = ListProperty([0.3, 0.3, 0.3, 1]); color_rew = ListProperty([0.3, 0.3, 0.3, 1])
-    
-    touch_start_x = 0
+    sort_states = {}; viewer_title = StringProperty(''); viewer_image_source = StringProperty('')
+    current_view_idx = NumericProperty(-1); color_comp = ListProperty([0.3, 0.3, 0.3, 1])
+    color_short = ListProperty([0.3, 0.3, 0.3, 1]); color_rew = ListProperty([0.3, 0.3, 0.3, 1]); touch_start_x = 0
 
     def build(self):
-        self.load_settings()
-        Builder.load_string(KV_UI)
-        sm = ScreenManager()
-        sm.add_widget(ListScreen(name='list'))
-        sm.add_widget(ViewerScreen(name='viewer'))
+        self.load_settings(); Builder.load_string(KV_UI)
+        sm = ScreenManager(); sm.add_widget(ListScreen(name='list')); sm.add_widget(ViewerScreen(name='viewer'))
         return sm
 
     def on_start(self):
@@ -291,7 +201,6 @@ class CheckSheetApp(App):
                 intent.setData(uri); Context.startActivity(intent)
         except: pass
 
-    # --- 데이터 관리 ---
     def load_excel_data(self, path):
         try:
             wb = load_workbook(path, data_only=True); ws = wb.active; rows = list(ws.rows)
@@ -307,19 +216,19 @@ class CheckSheetApp(App):
                     'real_index': i
                 })
             self.root.get_screen('list').ids.rv.data = rv_data
-        except: self.show_error_popup("엑셀 로딩 실패: 양식을 확인하세요.")
+        except: self.show_error_popup("엑셀 로딩 실패: 양식 확인")
 
-    def update_item_status(self, item_code, no, status_type):
+    def update_item_status(self, ic, no, st):
         rv = self.root.get_screen('list').ids.rv
         for d in rv.data:
-            if d['item_code'] == item_code and d['no'] == no:
-                if status_type == 'complete':
+            if d['item_code'] == ic and d['no'] == no:
+                if st == 'complete':
                     d['complete'] = not d['complete']
                     if d['complete']: d['shortage'] = d['rework'] = False
-                elif status_type == 'shortage':
+                elif st == 'shortage':
                     d['shortage'] = not d['shortage']
                     if d['shortage']: d['complete'] = d['rework'] = False
-                elif status_type == 'rework':
+                elif st == 'rework':
                     d['rework'] = not d['rework']
                     if d['rework']: d['complete'] = d['shortage'] = False
                 break
@@ -342,34 +251,24 @@ class CheckSheetApp(App):
         rv.data = sorted(rv.data, key=lambda x: str(x.get(col, '')).lower(), reverse=(new_s == 'desc'))
         rv.refresh_from_data()
 
-    # --- 뷰어 ---
     def open_pdf_viewer(self, idx):
-        self.current_view_idx = idx
-        self.root.current = 'viewer'
-        self.load_viewer_pdf()
-
+        self.current_view_idx = idx; self.root.current = 'viewer'; self.load_viewer_pdf()
     def close_viewer(self): self.root.current = 'list'
-
     def load_viewer_pdf(self):
         item = self.root.get_screen('list').ids.rv.data[self.current_view_idx]
-        self.viewer_title = item['item_code']
-        self.refresh_viewer_ui()
+        self.viewer_title = item['item_code']; self.refresh_viewer_ui()
         local_path = os.path.join(LOCAL_BASE, f"{self.viewer_title}.pdf")
-        if not os.path.exists(local_path) and self.pdf_source == 'smb':
-            self.download_pdf_silently(self.viewer_title); return
+        if not os.path.exists(local_path) and self.pdf_source == 'smb': self.download_pdf_silently(self.viewer_title); return
         if platform == 'android': self.render_pdf(local_path)
         else: self.viewer_image_source = ""; self.viewer_image_source = "PDF VIEW (PC)"
-
     def refresh_viewer_ui(self):
         item = self.root.get_screen('list').ids.rv.data[self.current_view_idx]
         self.color_comp = [0, 1, 0, 1] if item['complete'] else [0.3, 0.3, 0.3, 1]
         self.color_short = [1, 1, 0, 1] if item['shortage'] else [0.3, 0.3, 0.3, 1]
         self.color_rew = [1, 0, 0, 1] if item['rework'] else [0.3, 0.3, 0.3, 1]
-
     def update_viewer_status(self, status):
         item = self.root.get_screen('list').ids.rv.data[self.current_view_idx]
         self.update_item_status(item['item_code'], item['no'], status)
-
     def render_pdf(self, path):
         try:
             from jnius import autoclass
@@ -383,7 +282,6 @@ class CheckSheetApp(App):
             out = autoclass('java.io.FileOutputStream')(tmp); bitmap.compress(autoclass('android.graphics.Bitmap$CompressFormat').PNG, 100, out); out.close()
             page.close(); renderer.close(); self.viewer_image_source = ""; self.viewer_image_source = tmp
         except: pass
-
     def on_viewer_touch_down(self, t): self.touch_start_x = t.x
     def on_viewer_touch_up(self, t):
         dx = t.x - self.touch_start_x
@@ -392,7 +290,6 @@ class CheckSheetApp(App):
             if dx > 0 and self.current_view_idx > 0: self.current_view_idx -= 1; self.load_viewer_pdf()
             elif dx < 0 and self.current_view_idx < len(rv_data)-1: self.current_view_idx += 1; self.load_viewer_pdf()
 
-    # --- 파일 선택 (로컬) ---
     def select_source(self, mode):
         content = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(20))
         pop = Popup(title="파일 출처 선택", content=content, size_hint=(0.8, 0.4))
@@ -410,25 +307,30 @@ class CheckSheetApp(App):
         if mode == 'dir': fc.dirselect = True
         
         content = BoxLayout(orientation='vertical', padding=dp(5))
-        content.add_widget(fc)
+        path_label = Label(text=fc.path, size_hint_y=None, height=dp(40), shorten=True, shorten_from='left')
+        fc.bind(path=lambda obj, val: setattr(path_label, 'text', val))
+        content.add_widget(path_label); content.add_widget(fc)
         pop = Popup(title="파일/폴더 선택", content=content, size_hint=(0.95, 0.95))
         
         def select(instance):
-            path = fc.selection[0] if fc.selection else (fc.path if mode == 'dir' else None)
-            if path:
-                if mode == 'file' and os.path.isfile(path):
-                    self.excel_path = path; self.load_excel_data(path); self.save_settings(); pop.dismiss()
-                elif mode == 'dir' and os.path.isdir(path):
-                    self.pdf_folder_path = path; self.pdf_source = 'local'; self.save_settings(); pop.dismiss()
-                else: self.show_error_popup("올바른 대상을 선택하세요.")
-            else: self.show_error_popup("선택된 항목이 없습니다.")
+            # 폴더 선택 모드: 선택된 게 없으면 현재 경로(fc.path) 사용
+            if mode == 'dir':
+                target_path = fc.selection[0] if fc.selection else fc.path
+                if os.path.isdir(target_path):
+                    self.pdf_folder_path = target_path; self.pdf_source = 'local'; self.save_settings(); pop.dismiss()
+                else: self.show_error_popup("폴더가 아닙니다.")
+            # 파일 선택 모드: 무조건 선택된 파일이 있어야 함
+            else:
+                if fc.selection:
+                    target_path = fc.selection[0]
+                    self.excel_path = target_path; self.load_excel_data(target_path); self.save_settings(); pop.dismiss()
+                else: self.show_error_popup("파일을 선택해 주세요.")
             
         btn_layout = BoxLayout(size_hint_y=None, height=dp(60), spacing=dp(10))
         btn_layout.add_widget(Button(text="취소", on_release=pop.dismiss))
         btn_layout.add_widget(Button(text="확인", on_release=select, background_color=(0, 0.7, 0, 1)))
         content.add_widget(btn_layout); pop.open()
 
-    # --- SMB 브라우저 복구 ---
     def open_smb_shares_browser(self, mode):
         conn = self.get_smb_conn_only()
         if not conn: self.show_error_popup("SMB 접속 실패: 설정 확인"); return
@@ -461,13 +363,13 @@ class CheckSheetApp(App):
         def on_click(cp, f):
             new_p = os.path.join(cp, f.filename).replace("\\", "/")
             if f.isDirectory:
-                if mode == 'dir': self.pdf_folder_path = f"{share}{new_p}"; self.pdf_source='smb'; self.save_settings(); pop.dismiss(); parent.dismiss(); conn.close()
+                if mode == 'dir': self.pdf_folder_path = f"{share}{new_p}"; self.pdf_source='smb'; self.save_settings(); popup.dismiss(); parent.dismiss(); conn.close()
                 else: refresh(new_p)
             else:
                 if mode == 'file':
                     local = os.path.join(LOCAL_BASE, f.filename)
                     with open(local, 'wb') as lf: conn.retrieveFile(share, new_p, lf)
-                    self.excel_path = local; self.load_excel_data(local); self.save_settings(); pop.dismiss(); parent.dismiss(); conn.close()
+                    self.excel_path = local; self.load_excel_data(local); self.save_settings(); popup.dismiss(); parent.dismiss(); conn.close()
         refresh(path); content.add_widget(scroll); content.add_widget(Button(text="닫기", size_hint_y=None, height=dp(80), on_release=lambda x: pop.dismiss())); pop.open()
 
     def get_smb_conn_only(self):
