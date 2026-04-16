@@ -523,15 +523,31 @@ class CheckSheetApp(App):
     def save_to_excel(self):
         if not self.excel_path: return
         try:
-            wb = load_workbook(self.excel_path); ws = wb.active; headers = [str(c.value).strip().lower() for c in ws[1]]
-            cols = {'완료':headers.index('완료')+1 if '완료' in headers else -1, '수량부족':headers.index('수량부족')+1 if '수량부족' in headers else -1, '재작업':headers.index('재작업')+1 if '재작업' in headers else -1}
+            wb = load_workbook(self.excel_path); ws = wb.active
+            headers = [str(c.value).strip() if c.value else "" for c in ws[1]]
+            
+            # 필수 열(완료, 수량부족, 재작업)이 없으면 새로 생성
+            target_cols = ['완료', '수량부족', '재작업']
+            cols = {}
+            for col_name in target_cols:
+                if col_name in headers:
+                    cols[col_name] = headers.index(col_name) + 1
+                else:
+                    new_col_idx = len(headers) + 1
+                    ws.cell(row=1, column=new_col_idx).value = col_name
+                    cols[col_name] = new_col_idx
+                    headers.append(col_name)
+            
             for d in self.root.get_screen('list').ids.rv.data:
-                r = d['real_index']+2
-                if cols['완료']>0: ws.cell(row=r, column=cols['완료']).value = 'V' if d['complete'] else ''
-                if cols['수량부족']>0: ws.cell(row=r, column=cols['수량부족']).value = 'V' if d['shortage'] else ''
-                if cols['재작업']>0: ws.cell(row=r, column=cols['재작업']).value = 'V' if d['rework'] else ''
-            wb.save(self.excel_path); self.show_error_popup("저장 완료")
-        except: self.show_error_popup("저장 실패")
+                r = d['real_index'] + 2
+                ws.cell(row=r, column=cols['완료']).value = 'V' if d.get('complete') else ''
+                ws.cell(row=r, column=cols['수량부족']).value = 'V' if d.get('shortage') else ''
+                ws.cell(row=r, column=cols['재작업']).value = 'V' if d.get('rework') else ''
+                
+            wb.save(self.excel_path)
+            self.show_error_popup("저장 완료")
+        except Exception as e:
+            self.show_error_popup(f"저장 실패: {str(e)}")
 
     def load_settings(self):
         if os.path.exists(SETTINGS_FILE):
