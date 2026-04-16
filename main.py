@@ -270,14 +270,12 @@ class CheckSheetApp(App):
         try:
             from android.permissions import request_permissions, Permission
             from jnius import autoclass
-            # 1. 일반 권한 요청 (팝업창)
             request_permissions([
                 Permission.READ_EXTERNAL_STORAGE, 
                 Permission.WRITE_EXTERNAL_STORAGE, 
                 Permission.INTERNET, 
                 Permission.ACCESS_NETWORK_STATE
             ])
-            # 2. 모든 파일 접근 권한 확인 및 요청 (안드로이드 11 이상 특수 화면)
             Env = autoclass('android.os.Environment')
             if hasattr(Env, 'isExternalStorageManager'):
                 if not Env.isExternalStorageManager():
@@ -304,7 +302,14 @@ class CheckSheetApp(App):
         pop.open()
 
     def open_local_browser(self, mode):
+        # 마지막 폴더 위치 기억 로직
         start_p = "/storage/emulated/0" if platform=='android' else os.getcwd()
+        if mode == 'file' and self.excel_path:
+            last_dir = os.path.dirname(self.excel_path)
+            if os.path.exists(last_dir): start_p = last_dir
+        elif mode == 'dir' and self.pdf_folder_path:
+            if os.path.exists(self.pdf_folder_path): start_p = self.pdf_folder_path
+            
         fc = FileChooserListView(path=start_p)
         if mode == 'dir': fc.dirselect = True
         
@@ -425,12 +430,16 @@ class CheckSheetApp(App):
             if not f.exists(): return
             pfd = autoclass('android.os.ParcelFileDescriptor').open(f, autoclass('android.os.ParcelFileDescriptor').MODE_READ_ONLY)
             renderer = autoclass('android.graphics.pdf.PdfRenderer')(pfd); page = renderer.openPage(0)
-            bitmap = autoclass('android.graphics.Bitmap').createBitmap(page.getWidth()*2, page.getHeight()*2, autoclass('android.graphics.Bitmap$Config').ARGB_8888)
+            # 해상도 향상을 위해 밀도 조절
+            bitmap = autoclass('android.graphics.Bitmap').createBitmap(int(page.getWidth()*2.5), int(page.getHeight()*2.5), autoclass('android.graphics.Bitmap$Config').ARGB_8888)
             page.render(bitmap, None, None, page.RENDER_MODE_FOR_DISPLAY)
-            tmp = os.path.join(LOCAL_BASE, "view.png")
+            # 앱 전용 내부 저장소에 임시 이미지 저장 (권한 문제 방지)
+            tmp = os.path.join(self.user_data_dir, "view.png")
             out = autoclass('java.io.FileOutputStream')(tmp); bitmap.compress(autoclass('android.graphics.Bitmap$CompressFormat').PNG, 100, out); out.close()
             page.close(); renderer.close(); self.viewer_image_source = ""; self.viewer_image_source = tmp
-        except: pass
+        except Exception as e:
+            print(f"PDF Render Error: {e}")
+
     def on_viewer_touch_down(self, t): self.touch_start_x = t.x
     def on_viewer_touch_up(self, t):
         dx = t.x - self.touch_start_x
