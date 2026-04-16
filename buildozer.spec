@@ -1,28 +1,26 @@
 [app]
-title = CheckSheet
-package.name = checksheetapp
+title = PDFTest
+package.name = pdftest
 package.domain = org.example
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,ttf,xlsx,json
-version = 1.0
+source.include_exts = py,png,jpg,kv,ttf,pdf
+version = 0.1
 
-# [App requirements]
-requirements = python3,kivy,openpyxl,et_xmlfile,jdcal,pyjnius,android,pysmb,pyasn1,six,tqdm
+# 최소화된 요구사항 (PDF 테스트 전용)
+requirements = python3,kivy,pyjnius,android
 
 orientation = portrait
 fullscreen = 0
 
-# [Permissions]
-android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE, INTERNET, ACCESS_NETWORK_STATE
+# 권한
+android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
 
-# [Android Gradle dependencies]
-android.gradle_dependencies = com.github.barteksc:android-pdf-viewer:3.2.0-beta.1
+# 가장 안정적인 PDF 라이브러리 설정 (JitPack 이용)
+android.gradle_dependencies = com.github.barteksc:android-pdf-viewer:2.8.2
 android.gradle_repositories = https://jitpack.io
 
-# [AndroidX support]
+# 필수 설정
 android.enable_androidx = True
-
-# [Build settings]
 android.accept_sdk_license = True
 android.api = 33
 android.minapi = 21
