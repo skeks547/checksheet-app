@@ -250,14 +250,25 @@ class RowWidget(BoxLayout):
             if d['item_code'] == self.item_code and d['no'] == self.no:
                 app.open_pdf_viewer(i); break
 
-# --- 3. 로컬 파일 서버 ---
-class PDFServer(SimpleHTTPRequestHandler):
+# --- 3. 안전한 로컬 파일 서버 (os.chdir 사용 안 함) ---
+class SecurePDFServer(SimpleHTTPRequestHandler):
+    def __init__(self, *args, directory=None, **kwargs):
+        if directory: self.base_dir = directory
+        super().__init__(*args, **kwargs)
+    
+    def translate_path(self, path):
+        path = super().translate_path(path)
+        rel_path = os.path.relpath(path, os.getcwd())
+        return os.path.join(self.base_dir, rel_path)
+
     def log_message(self, format, *args): pass
 
 def run_server(port, directory):
     try:
-        os.chdir(directory)
-        httpd = HTTPServer(('127.0.0.1', port), PDFServer)
+        # 전역 경로를 바꾸지 않고 생성자에서 경로를 처리하는 핸들러 사용
+        def handler(*args, **kwargs):
+            return SecurePDFServer(*args, directory=directory, **kwargs)
+        httpd = HTTPServer(('127.0.0.1', port), handler)
         httpd.serve_forever()
     except: pass
 
@@ -273,7 +284,7 @@ class CheckSheetApp(App):
     
     android_webview = None
     server_started = False
-    data_loaded = BooleanProperty(False) # 중복 로드 방지 플래그
+    data_loaded = BooleanProperty(False)
 
     def build(self):
         self.load_settings()
@@ -286,8 +297,6 @@ class CheckSheetApp(App):
     def on_start(self):
         if platform == 'android': 
             Clock.schedule_once(self.ask_permissions, 1)
-        
-        # 사용자님 제안 반영: 중복 로드 방지 로직
         if not self.data_loaded and self.excel_path and os.path.exists(self.excel_path):
             self.load_excel_data(self.excel_path)
             self.data_loaded = True
@@ -328,7 +337,6 @@ class CheckSheetApp(App):
         
         if platform == 'android':
             self.start_local_server(base_path)
-            # WebView 초기화 및 도면 로드
             Clock.schedule_once(lambda dt: self.init_android_webview(item['item_code']), 0.5)
         else:
             self.show_error_popup("벡터 뷰어는 안드로이드에서만 작동합니다.")
@@ -339,23 +347,31 @@ class CheckSheetApp(App):
 
         @run_on_main_thread
         def setup_webview():
-            mActivity = autoclass('org.kivy.android.PythonActivity').mActivity
-            WebView = autoclass('android.webkit.WebView')
-            WebViewClient = autoclass('android.webkit.WebViewClient')
-            
-            if not self.android_webview:
-                self.android_webview = WebView(mActivity)
-                self.android_webview.getSettings().setJavaScriptEnabled(True)
-                self.android_webview.getSettings().setAllowFileAccess(True)
-                self.android_webview.getSettings().setBuiltInZoomControls(True)
-                self.android_webview.getSettings().setDisplayZoomControls(False)
-                self.android_webview.setWebViewClient(WebViewClient())
-                mActivity.addContentView(self.android_webview, autoclass('android.view.ViewGroup$LayoutParams')(-1, -1))
+            try:
+                mActivity = autoclass('org.kivy.android.PythonActivity').mActivity
+                WebView = autoclass('android.webkit.WebView')
+                WebViewClient = autoclass('android.webkit.WebViewClient')
+                
+                if not self.android_webview:
+                    self.android_webview = WebView(mActivity)
+                    settings = self.android_webview.getSettings()
+                    settings.setJavaScriptEnabled(True)
+                    settings.setAllowFileAccess(True)
+                    settings.setBuiltInZoomControls(True)
+                    settings.setDisplayZoomControls(False)
+                    settings.setSupportZoom(True)
+                    settings.setUseWideViewPort(True)
+                    settings.setLoadWithOverviewMode(True)
+                    self.android_webview.setWebViewClient(WebViewClient())
+                    # addContentView 대신 레이아웃에 직접 올리는 방식 시도
+                    mActivity.addContentView(self.android_webview, autoclass('android.view.ViewGroup$LayoutParams')(-1, -1))
 
-            self.android_webview.setVisibility(autoclass('android.view.View').VISIBLE)
-            # 로컬 서버를 통해 PDF 열기
-            pdf_url = f"http://127.0.0.1:8080/{filename}.pdf"
-            self.android_webview.loadUrl(pdf_url)
+                self.android_webview.setVisibility(autoclass('android.view.View').VISIBLE)
+                self.android_webview.bringToFront()
+                pdf_url = f"http://127.0.0.1:8080/{filename}.pdf"
+                self.android_webview.loadUrl(pdf_url)
+            except Exception as e:
+                print(f"WebView Error: {e}")
 
         setup_webview()
 
@@ -365,7 +381,9 @@ class CheckSheetApp(App):
             from android.runnable import run_on_main_thread
             @run_on_main_thread
             def hide_webview():
-                self.android_webview.setVisibility(autoclass('android.view.View').GONE)
+                try:
+                    self.android_webview.setVisibility(autoclass('android.view.View').GONE)
+                except: pass
             hide_webview()
         self.root.current = 'list'
 
@@ -401,7 +419,7 @@ class CheckSheetApp(App):
             if mode == 'file':
                 if os.path.isfile(target):
                     self.excel_path = target
-                    self.data_loaded = False # 새 파일 선택 시 다시 로드 허용
+                    self.data_loaded = False
                     self.load_excel_data(target)
                     self.save_settings(); pop.dismiss()
                 else: self.show_error_popup("파일을 선택하세요.")
@@ -418,11 +436,8 @@ class CheckSheetApp(App):
     def load_excel_data(self, path):
         try:
             wb = load_workbook(path, data_only=True); ws = wb.active; rows = list(ws.rows)
-            
-            # 사용자님 제안 반영: 데이터 초기화
             rv = self.root.get_screen('list').ids.rv
             rv.data = []
-            
             headers = [str(cell.value).strip().lower() for cell in rows[0]]
             idx_no, idx_code, idx_qty = headers.index('no'), headers.index('품목코드'), headers.index('수량')
             rv_data = []
