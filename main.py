@@ -36,7 +36,7 @@ if os.path.exists(FONT_NAME):
         CoreLabel.register("Roboto", FONT_NAME)
     except: pass
 
-# --- 2. UI 디자인 (WebView 영역 확보) ---
+# --- 2. UI 디자인 ---
 KV_UI = """
 <Label>:
     font_name: 'Roboto'
@@ -156,7 +156,6 @@ KV_UI = """
                 width: dp(100)
                 on_release: app.close_viewer()
 
-        # 벡터 뷰어 (WebView가 이 자리에 배치됩니다)
         BoxLayout:
             id: webview_container
             canvas.before:
@@ -251,14 +250,16 @@ class RowWidget(BoxLayout):
             if d['item_code'] == self.item_code and d['no'] == self.no:
                 app.open_pdf_viewer(i); break
 
-# --- 3. 로컬 파일 서버 (WebView에 파일 공급용) ---
+# --- 3. 로컬 파일 서버 ---
 class PDFServer(SimpleHTTPRequestHandler):
-    def log_message(self, format, *args): pass # 로그 생략
+    def log_message(self, format, *args): pass
 
 def run_server(port, directory):
-    os.chdir(directory)
-    httpd = HTTPServer(('127.0.0.1', port), PDFServer)
-    httpd.serve_forever()
+    try:
+        os.chdir(directory)
+        httpd = HTTPServer(('127.0.0.1', port), PDFServer)
+        httpd.serve_forever()
+    except: pass
 
 class CheckSheetApp(App):
     excel_path = StringProperty(''); pdf_folder_path = StringProperty('')
@@ -272,6 +273,7 @@ class CheckSheetApp(App):
     
     android_webview = None
     server_started = False
+    data_loaded = BooleanProperty(False) # 중복 로드 방지 플래그
 
     def build(self):
         self.load_settings()
@@ -282,8 +284,13 @@ class CheckSheetApp(App):
         return sm
 
     def on_start(self):
-        if platform == 'android': Clock.schedule_once(self.ask_permissions, 1)
-        if self.excel_path and os.path.exists(self.excel_path): self.load_excel_data(self.excel_path)
+        if platform == 'android': 
+            Clock.schedule_once(self.ask_permissions, 1)
+        
+        # 사용자님 제안 반영: 중복 로드 방지 로직
+        if not self.data_loaded and self.excel_path and os.path.exists(self.excel_path):
+            self.load_excel_data(self.excel_path)
+            self.data_loaded = True
 
     def ask_permissions(self, dt):
         try:
@@ -321,12 +328,13 @@ class CheckSheetApp(App):
         
         if platform == 'android':
             self.start_local_server(base_path)
+            # WebView 초기화 및 도면 로드
             Clock.schedule_once(lambda dt: self.init_android_webview(item['item_code']), 0.5)
         else:
             self.show_error_popup("벡터 뷰어는 안드로이드에서만 작동합니다.")
 
     def init_android_webview(self, filename):
-        from jnius import autoclass, cast
+        from jnius import autoclass
         from android.runnable import run_on_main_thread
 
         @run_on_main_thread
@@ -338,19 +346,14 @@ class CheckSheetApp(App):
             if not self.android_webview:
                 self.android_webview = WebView(mActivity)
                 self.android_webview.getSettings().setJavaScriptEnabled(True)
+                self.android_webview.getSettings().setAllowFileAccess(True)
                 self.android_webview.getSettings().setBuiltInZoomControls(True)
                 self.android_webview.getSettings().setDisplayZoomControls(False)
-                self.android_webview.getSettings().setSupportZoom(True)
                 self.android_webview.setWebViewClient(WebViewClient())
-                
-                # Kivy 컨테이너에 WebView 추가
-                container = self.root.get_screen('viewer').ids.webview_container
-                # 안드로이드 뷰를 Kivy 위에 올리는 복잡한 과정 생략하고 단순히 레이아웃에 추가
                 mActivity.addContentView(self.android_webview, autoclass('android.view.ViewGroup$LayoutParams')(-1, -1))
 
             self.android_webview.setVisibility(autoclass('android.view.View').VISIBLE)
-            # 구글 Docs 뷰어를 통한 벡터 렌더링 (가장 확실한 방법)
-            # 로컬 서버를 통한 직접 열기가 안될 경우를 대비
+            # 로컬 서버를 통해 PDF 열기
             pdf_url = f"http://127.0.0.1:8080/{filename}.pdf"
             self.android_webview.loadUrl(pdf_url)
 
@@ -397,7 +400,10 @@ class CheckSheetApp(App):
             target = fc.selection[0] if fc.selection else fc.path
             if mode == 'file':
                 if os.path.isfile(target):
-                    self.excel_path = target; self.load_excel_data(target); self.save_settings(); pop.dismiss()
+                    self.excel_path = target
+                    self.data_loaded = False # 새 파일 선택 시 다시 로드 허용
+                    self.load_excel_data(target)
+                    self.save_settings(); pop.dismiss()
                 else: self.show_error_popup("파일을 선택하세요.")
             else:
                 if os.path.isdir(target):
@@ -412,6 +418,11 @@ class CheckSheetApp(App):
     def load_excel_data(self, path):
         try:
             wb = load_workbook(path, data_only=True); ws = wb.active; rows = list(ws.rows)
+            
+            # 사용자님 제안 반영: 데이터 초기화
+            rv = self.root.get_screen('list').ids.rv
+            rv.data = []
+            
             headers = [str(cell.value).strip().lower() for cell in rows[0]]
             idx_no, idx_code, idx_qty = headers.index('no'), headers.index('품목코드'), headers.index('수량')
             rv_data = []
@@ -423,7 +434,8 @@ class CheckSheetApp(App):
                     'rework': str(ws.cell(row=i+2, column=headers.index('재작업')+1).value or '').upper() == 'V' if '재작업' in headers else False,
                     'real_index': i
                 })
-            self.root.get_screen('list').ids.rv.data = rv_data
+            rv.data = rv_data
+            self.data_loaded = True
         except: pass
 
     def sort_by(self, col):
@@ -476,7 +488,6 @@ class CheckSheetApp(App):
         list_box.bind(minimum_height=list_box.setter('height')); scroll.add_widget(list_box)
         pop = Popup(title="공유폴더 선택", content=content, size_hint=(0.95, 0.95))
         try:
-            from smb.SMBConnection import SMBConnection
             for s in conn.listShares():
                 if s.isSpecial or s.name.endswith('$'): continue
                 btn = Button(text=f"📁 {s.name}", size_hint_y=None, height=dp(90))
