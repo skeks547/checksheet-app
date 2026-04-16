@@ -1,29 +1,28 @@
 [app]
-title = PDFTest
-package.name = pdftest
+title = PDFQuickTest
+package.name = pdfqtest
 package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf,pdf
 source.exclude_dirs = backup, bin, .buildozer
-version = 0.2
+version = 0.3
 
-# 핵심 요구사항만 포함
+# [핵심] 최소 요구사항
 requirements = python3,kivy,pyjnius,android
 
 orientation = portrait
 fullscreen = 0
 
-# 권한 설정
+# [핵심] 권한
 android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE
 
-# AndroidX 호환 라이브러리 사용
+# [핵심] Gradle 의존성 및 AndroidX
 android.gradle_dependencies = com.github.barteksc:android-pdf-viewer:3.2.0-beta.1
 android.enable_androidx = True
 
-# 빌드 환경 설정
+# 빌드 환경
 android.api = 33
 android.minapi = 21
-android.ndk_api = 21
 android.accept_sdk_license = True
 
 [buildozer]

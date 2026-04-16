@@ -1,62 +1,49 @@
-import os
 from kivy.app import App
-from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.boxlayout import BoxLayout
 from kivy.utils import platform
 from kivy.clock import Clock
+import os
 
-class PDFTestApp(App):
+class TestApp(App):
     def build(self):
-        self.layout = BoxLayout(orientation='vertical')
-        self.btn = Button(text="Open PDF (4000500638.pdf)", size_hint_y=0.2)
-        self.btn.bind(on_release=self.open_native_pdf)
-        self.status = Label(text="Click button to test PDF viewer")
-        
-        self.layout.add_widget(self.status)
-        self.layout.add_widget(self.btn)
-        return self.layout
+        return Label(text="PDF Viewer Test Loading...")
 
     def on_start(self):
         if platform == 'android':
+            # 권한 요청 후 1초 뒤 실행
             from android.permissions import request_permissions, Permission
             request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
+            Clock.schedule_once(self.open_pdf, 1)
 
-    def open_native_pdf(self, instance):
-        # 테스트용 PDF 경로 (저장소에 실존하는 파일)
-        pdf_path = os.path.join(os.path.dirname(__file__), "pdfss", "4000500638.pdf")
-        
-        if not os.path.exists(pdf_path):
-            self.status.text = f"File not found: {pdf_path}"
-            return
+    def open_pdf(self, dt):
+        try:
+            from jnius import autoclass
+            from android.runnable import run_on_main_thread
 
-        if platform == 'android':
-            try:
-                from jnius import autoclass
-                from android.runnable import run_on_main_thread
+            @run_on_main_thread
+            def run():
+                try:
+                    mActivity = autoclass('org.kivy.android.PythonActivity').mActivity
+                    PDFView = autoclass('com.github.barteksc.pdfviewer.PDFView')
+                    File = autoclass('java.io.File')
+                    LayoutParams = autoclass('android.view.ViewGroup$LayoutParams')
 
-                @run_on_main_thread
-                def _show():
-                    try:
-                        mActivity = autoclass('org.kivy.android.PythonActivity').mActivity
-                        File = autoclass('java.io.File')
-                        # 대소문자 주의: com.github.barteksc.pdfviewer.PDFView
-                        PDFView = autoclass('com.github.barteksc.pdfviewer.PDFView')
-                        
-                        pdf_view = PDFView(mActivity, None)
-                        mActivity.addContentView(pdf_view, 
-                            autoclass('android.view.ViewGroup$LayoutParams')(-1, -1))
-                        
+                    pdfView = PDFView(mActivity, None)
+                    mActivity.addContentView(pdfView, LayoutParams(-1, -1))
+
+                    # 프로젝트 내부의 실제 파일 경로 사용
+                    pdf_path = os.path.join(os.path.dirname(__file__), "pdf", "4000500638.pdf")
+                    
+                    if os.path.exists(pdf_path):
                         file = File(pdf_path)
-                        pdf_view.fromFile(file).load()
-                        self.status.text = "PDF Viewer loaded successfully"
-                    except Exception as e:
-                        self.status.text = f"Native Error: {str(e)}"
-                _show()
-            except Exception as e:
-                self.status.text = f"Pyjnius Error: {str(e)}"
-        else:
-            self.status.text = "Native PDF viewer only works on Android"
+                        pdfView.fromFile(file).enableSwipe(True).load()
+                    else:
+                        print(f"DEBUG: File not found at {pdf_path}")
+                except Exception as e:
+                    print(f"DEBUG: Native Error: {e}")
+            run()
+        except Exception as e:
+            print(f"DEBUG: Pyjnius Error: {e}")
 
 if __name__ == '__main__':
-    PDFTestApp().run()
+    TestApp().run()
