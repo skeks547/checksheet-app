@@ -21,7 +21,7 @@ from kivy.utils import platform
 from kivy.clock import Clock
 from kivy.metrics import dp
 
-# --- 1. 한글 폰트 설정 (안정성 강화) ---
+# --- 1. 한글 폰트 설정 ---
 FONT_NAME = "font.ttf"
 if platform == 'android':
     FONT_NAME = os.path.join(os.path.dirname(__file__), "font.ttf")
@@ -307,28 +307,41 @@ class CheckSheetApp(App):
     def show_android_pdf(self, path):
         from jnius import autoclass
         from android.runnable import run_on_main_thread
+        
+        # 크래시 방지: 클래스 미리 로드
+        try:
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            PDFViewClass = autoclass('com.github.barteksc.pdfviewer.PDFView')
+            FileClass = autoclass('java.io.File')
+            LayoutParamsClass = autoclass('android.view.ViewGroup$LayoutParams')
+        except Exception as e:
+            self.show_error_popup(f"Library Load Error: {e}"); return
+
         @run_on_main_thread
         def _setup():
             try:
-                mActivity = autoclass('org.kivy.android.PythonActivity').mActivity
-                File = autoclass('java.io.File')
-                # mhiew fork의 경우도 패키지명은 동일하게 유지됨
-                PDFView = autoclass('com.github.barteksc.pdfviewer.PDFView')
+                mActivity = PythonActivity.mActivity
                 if not self.native_pdf_view:
-                    self.native_pdf_view = PDFView(mActivity, None)
-                    mActivity.addContentView(self.native_pdf_view, autoclass('android.view.ViewGroup$LayoutParams')(-1, -1))
-                self.native_pdf_view.setVisibility(autoclass('android.view.View').VISIBLE)
+                    self.native_pdf_view = PDFViewClass(mActivity, None)
+                    # -1 대신 MATCH_PARENT 상수 사용
+                    lp = LayoutParamsClass(LayoutParamsClass.MATCH_PARENT, LayoutParamsClass.MATCH_PARENT)
+                    mActivity.addContentView(self.native_pdf_view, lp)
+                
+                self.native_pdf_view.setVisibility(0) # VISIBLE
                 self.native_pdf_view.bringToFront()
-                file = File(path)
-                self.native_pdf_view.fromFile(file).enableSwipe(True).load()
-            except Exception as e: print(f"Native PDF Error: {e}")
+                
+                file_obj = FileClass(os.path.abspath(path))
+                self.native_pdf_view.fromFile(file_obj).enableSwipe(True).load()
+            except Exception as e:
+                print(f"Native Setup Error: {e}")
         _setup()
 
     def close_native_pdf(self):
         if platform == 'android' and self.native_pdf_view:
             from android.runnable import run_on_main_thread
             @run_on_main_thread
-            def _hide(): self.native_pdf_view.setVisibility(autoclass('android.view.View').GONE)
+            def _hide():
+                self.native_pdf_view.setVisibility(8) # GONE
             _hide()
         self.root.current = 'list'
 
@@ -336,41 +349,29 @@ class CheckSheetApp(App):
         try:
             wb = load_workbook(path, data_only=True); ws = wb.active; rows = list(ws.rows)
             if not rows: return
-            
             headers = [str(cell.value).strip().lower() if cell.value else "" for cell in rows[0]]
-            
-            # 헤더 인덱스 찾기 (유연하게 처리)
             try:
-                idx_no = headers.index('no')
-                idx_code = headers.index('품목코드')
-                idx_qty = headers.index('수량')
+                idx_no, idx_code, idx_qty = headers.index('no'), headers.index('품목코드'), headers.index('수량')
             except ValueError:
-                self.show_error_popup("엑셀 헤더(no, 품목코드, 수량)를 확인하세요.")
-                return
-
+                self.show_error_popup("엑셀 헤더(no, 품목코드, 수량)를 확인하세요."); return
             rv_data = []
             for i, row in enumerate(rows[1:]):
                 if not row[idx_code].value: continue
                 rv_data.append({
-                    'no': str(row[idx_no].value or ''), 
-                    'item_code': str(row[idx_code].value or ''), 
-                    'quantity': str(row[idx_qty].value or ''),
+                    'no': str(row[idx_no].value or ''), 'item_code': str(row[idx_code].value or ''), 'quantity': str(row[idx_qty].value or ''),
                     'complete': str(ws.cell(row=i+2, column=headers.index('완료')+1).value or '').upper() == 'V' if '완료' in headers else False,
                     'shortage': str(ws.cell(row=i+2, column=headers.index('수량부족')+1).value or '').upper() == 'V' if '수량부족' in headers else False,
                     'rework': str(ws.cell(row=i+2, column=headers.index('재작업')+1).value or '').upper() == 'V' if '재작업' in headers else False,
                     'real_index': i
                 })
-            self.root.get_screen('list').ids.rv.data = rv_data
-            self.data_loaded = True
+            self.root.get_screen('list').ids.rv.data = rv_data; self.data_loaded = True
             self.current_filename = os.path.basename(path)
-        except Exception as e:
-            self.show_error_popup(f"엑셀 로드 실패: {str(e)}")
+        except Exception as e: self.show_error_popup(f"엑셀 로드 실패: {str(e)}")
 
     def save_to_excel(self):
         if not self.excel_path: return
         try:
-            wb = load_workbook(self.excel_path); ws = wb.active
-            headers = [str(c.value).strip() if c.value else "" for c in ws[1]]
+            wb = load_workbook(self.excel_path); ws = wb.active; headers = [str(c.value).strip() if c.value else "" for c in ws[1]]
             target_cols = ['완료', '수량부족', '재작업']
             cols = {}
             for col_name in target_cols:
@@ -386,41 +387,6 @@ class CheckSheetApp(App):
             wb.save(self.excel_path); self.show_error_popup("저장 완료")
         except Exception as e: self.show_error_popup(f"저장 실패: {str(e)}")
 
-    def select_source(self, mode):
-        content = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(20))
-        pop = Popup(title="파일 출처 선택", content=content, size_hint=(0.85, 0.4))
-        def choice(c):
-            pop.dismiss()
-            if c == 'local': self.open_local_browser(mode)
-            else: self.open_smb_shares_browser(mode)
-        content.add_widget(Button(text="내 휴대폰", on_release=lambda x: choice('local')))
-        content.add_widget(Button(text="PC 공유폴더", on_release=lambda x: choice('smb')))
-        pop.open()
-
-    def open_local_browser(self, mode):
-        start_p = "/storage/emulated/0" if platform=='android' else os.getcwd()
-        fc = FileChooserListView(path=start_p)
-        if mode == 'dir': fc.dirselect = True
-        content = BoxLayout(orientation='vertical', padding=dp(5))
-        path_label = Label(text=fc.path, size_hint_y=None, height=dp(40), shorten=True, shorten_from='left')
-        fc.bind(path=lambda obj, val: setattr(path_label, 'text', val))
-        content.add_widget(path_label); content.add_widget(fc)
-        pop = Popup(title="선택", content=content, size_hint=(0.95, 0.95))
-        def on_confirm(instance):
-            target = fc.selection[0] if fc.selection else fc.path
-            if mode == 'file':
-                if os.path.isfile(target):
-                    self.excel_path = target; self.data_loaded = False; self.load_excel_data(target); self.save_settings(); pop.dismiss()
-                else: self.show_error_popup("파일을 선택하세요.")
-            else:
-                if os.path.isdir(target):
-                    self.pdf_folder_path = target; self.pdf_source = 'local'; self.save_settings(); pop.dismiss()
-                else: self.show_error_popup("폴더가 아닙니다.")
-        btn_layout = BoxLayout(size_hint_y=None, height=dp(60), spacing=dp(10))
-        btn_layout.add_widget(Button(text="취소", on_release=pop.dismiss))
-        btn_layout.add_widget(Button(text="확인", on_release=on_confirm, background_color=(0, 0.7, 0, 1)))
-        content.add_widget(btn_layout); pop.open()
-
     def sort_by(self, col):
         rv = self.root.get_screen('list').ids.rv
         if not rv.data: return
@@ -434,17 +400,12 @@ class CheckSheetApp(App):
         elif col == 'complete': self.sort_indicator_comp = ind
         elif col == 'shortage': self.sort_indicator_short = ind
         elif col == 'rework': self.sort_indicator_rew = ind
-        
         def sort_key(x):
             val = str(x.get(col, '')).lower()
-            # no나 quantity 열은 숫자로 변환하여 정렬 시도 (자연스러운 정렬)
             if col in ['no', 'quantity']:
-                try:
-                    return int(''.join(filter(str.isdigit, val)) or 0)
-                except:
-                    return val
+                try: return int(''.join(filter(str.isdigit, val)) or 0)
+                except: return val
             return val
-
         rv.data = sorted(rv.data, key=sort_key, reverse=(new_s == 'desc'))
         rv.refresh_from_data()
 
@@ -475,6 +436,35 @@ class CheckSheetApp(App):
         item = self.root.get_screen('list').ids.rv.data[self.current_view_idx]
         self.update_item_status(item['item_code'], item['no'], status)
 
+    def select_source(self, mode):
+        content = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(20))
+        pop = Popup(title="파일 출처 선택", content=content, size_hint=(0.85, 0.4))
+        def choice(c):
+            pop.dismiss()
+            if c == 'local': self.open_local_browser(mode)
+            else: self.open_smb_shares_browser(mode)
+        content.add_widget(Button(text="내 휴대폰", on_release=lambda x: choice('local')))
+        content.add_widget(Button(text="PC 공유폴더", on_release=lambda x: choice('smb')))
+        pop.open()
+
+    def open_local_browser(self, mode):
+        start_p = "/storage/emulated/0" if platform=='android' else os.getcwd()
+        fc = FileChooserListView(path=start_p)
+        if mode == 'dir': fc.dirselect = True
+        content = BoxLayout(orientation='vertical', padding=dp(5)); path_label = Label(text=fc.path, size_hint_y=None, height=dp(40), shorten=True, shorten_from='left')
+        fc.bind(path=lambda obj, val: setattr(path_label, 'text', val)); content.add_widget(path_label); content.add_widget(fc)
+        pop = Popup(title="선택", content=content, size_hint=(0.95, 0.95))
+        def on_confirm(instance):
+            target = fc.selection[0] if fc.selection else fc.path
+            if mode == 'file':
+                if os.path.isfile(target): self.excel_path = target; self.data_loaded = False; self.load_excel_data(target); self.save_settings(); pop.dismiss()
+                else: self.show_error_popup("파일을 선택하세요.")
+            else:
+                if os.path.isdir(target): self.pdf_folder_path = target; self.pdf_source = 'local'; self.save_settings(); pop.dismiss()
+                else: self.show_error_popup("폴더가 아닙니다.")
+        btn_layout = BoxLayout(size_hint_y=None, height=dp(60), spacing=dp(10))
+        btn_layout.add_widget(Button(text="취소", on_release=pop.dismiss)); btn_layout.add_widget(Button(text="확인", on_release=on_confirm, background_color=(0, 0.7, 0, 1))); content.add_widget(btn_layout); pop.open()
+
     def open_smb_shares_browser(self, mode):
         conn = self.get_smb_conn_only()
         if not conn: self.show_error_popup("SMB 접속 실패"); return
@@ -484,8 +474,7 @@ class CheckSheetApp(App):
         try:
             for s in conn.listShares():
                 if s.isSpecial or s.name.endswith('$'): continue
-                btn = Button(text=f"📁 {s.name}", size_hint_y=None, height=dp(90))
-                btn.bind(on_release=lambda b, s=s: self.open_smb_files_browser(conn, s.name, "/", mode, pop)); list_box.add_widget(btn)
+                btn = Button(text=f"📁 {s.name}", size_hint_y=None, height=dp(90)); btn.bind(on_release=lambda b, s=s: self.open_smb_files_browser(conn, s.name, "/", mode, pop)); list_box.add_widget(btn)
         except: pass
         content.add_widget(scroll); content.add_widget(Button(text="취소", size_hint_y=None, height=dp(80), on_release=lambda x: (conn.close(), pop.dismiss()))); pop.open()
 
@@ -496,12 +485,10 @@ class CheckSheetApp(App):
         def refresh(cp):
             list_box.clear_widgets()
             if cp != "/":
-                btn = Button(text=".. 상위폴더", size_hint_y=None, height=dp(80))
-                btn.bind(on_release=lambda x: refresh(os.path.dirname(cp.rstrip("/")) or "/")); list_box.add_widget(btn)
+                btn = Button(text=".. 상위폴더", size_hint_y=None, height=dp(80)); btn.bind(on_release=lambda x: refresh(os.path.dirname(cp.rstrip("/")) or "/")); list_box.add_widget(btn)
             for f in conn.listPath(share, cp):
                 if f.filename in ['.', '..']: continue
-                btn = Button(text=f"{'📁' if f.isDirectory else '📄'} {f.filename}", size_hint_y=None, height=dp(90))
-                btn.bind(on_release=lambda b, f=f: on_click(cp, f)); list_box.add_widget(btn)
+                btn = Button(text=f"{'📁' if f.isDirectory else '📄'} {f.filename}", size_hint_y=None, height=dp(90)); btn.bind(on_release=lambda b, f=f: on_click(cp, f)); list_box.add_widget(btn)
         def on_click(cp, f):
             new_p = os.path.join(cp, f.filename).replace("\\", "/")
             if f.isDirectory:
@@ -518,20 +505,15 @@ class CheckSheetApp(App):
     def get_smb_conn_only(self):
         try:
             from smb.SMBConnection import SMBConnection
-            ip = self.smb_config['ip']
-            conn = SMBConnection(self.smb_config['user'], self.smb_config['pass'], "App", ip, use_ntlm_v2=True, is_direct_tcp=True)
+            ip = self.smb_config['ip']; conn = SMBConnection(self.smb_config['user'], self.smb_config['pass'], "App", ip, use_ntlm_v2=True, is_direct_tcp=True)
             if conn.connect(ip, 445, timeout=3): return conn
         except: pass
         return None
 
     def open_smb_settings(self):
         content = BoxLayout(orientation='vertical', padding=20, spacing=10)
-        ips = TextInput(text=self.smb_config['ip'], multiline=False, height=dp(60))
-        usr = TextInput(text=self.smb_config['user'], multiline=False, height=dp(60))
-        pas = TextInput(text=self.smb_config['pass'], password=True, multiline=False, height=dp(60))
-        content.add_widget(Label(text="IP")); content.add_widget(ips)
-        content.add_widget(Label(text="ID")); content.add_widget(usr)
-        content.add_widget(Label(text="PW")); content.add_widget(pas)
+        ips = TextInput(text=self.smb_config['ip'], multiline=False, height=dp(60)); usr = TextInput(text=self.smb_config['user'], multiline=False, height=dp(60)); pas = TextInput(text=self.smb_config['pass'], password=True, multiline=False, height=dp(60))
+        content.add_widget(Label(text="IP")); content.add_widget(ips); content.add_widget(Label(text="ID")); content.add_widget(usr); content.add_widget(Label(text="PW")); content.add_widget(pas)
         pop = Popup(title="SMB 설정", content=content, size_hint=(0.9, 0.7))
         def save(x): self.smb_config = {'ip':ips.text,'user':usr.text,'pass':pas.text}; self.save_settings(); pop.dismiss()
         content.add_widget(Button(text="저장", on_release=save)); pop.open()
@@ -540,13 +522,11 @@ class CheckSheetApp(App):
         if os.path.exists(SETTINGS_FILE):
             try:
                 with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    d = json.load(f); self.excel_path = d.get('excel_path', ''); self.pdf_folder_path = d.get('pdf_folder_path', '')
-                    self.pdf_source = d.get('pdf_source', 'local'); self.smb_config = d.get('smb_config', {'ip':'','user':'','pass':''})
+                    d = json.load(f); self.excel_path = d.get('excel_path', ''); self.pdf_folder_path = d.get('pdf_folder_path', ''); self.pdf_source = d.get('pdf_source', 'local'); self.smb_config = d.get('smb_config', {'ip':'','user':'','pass':''})
             except: pass
 
     def save_settings(self):
-        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
-            json.dump({'excel_path': self.excel_path, 'pdf_folder_path': self.pdf_folder_path, 'pdf_source': self.pdf_source, 'smb_config': self.smb_config}, f, ensure_ascii=False)
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f: json.dump({'excel_path': self.excel_path, 'pdf_folder_path': self.pdf_folder_path, 'pdf_source': self.pdf_source, 'smb_config': self.smb_config}, f, ensure_ascii=False)
 
     def show_error_popup(self, msg): Popup(title="알림", content=Label(text=msg), size_hint=(0.8, 0.4)).open()
 
