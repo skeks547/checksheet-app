@@ -1269,3 +1269,7 @@ final이란 글자는 제외해줘.
 
 아래 메세지 나와.
 Step 2-2 Error: No module named 'et_xmlfile'
+
+
+아래 메세지 나와.
+Step 2-3 Error: No mokule named 'tqdm'
