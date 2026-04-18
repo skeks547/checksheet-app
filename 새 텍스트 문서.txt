@@ -1273,3 +1273,64 @@ Step 2-2 Error: No module named 'et_xmlfile'
 
 아래 메세지 나와.
 Step 2-3 Error: No mokule named 'tqdm'
+
+
+
+
+
+
+
+fix: v10.0 final - extreme isolation and syntax error fix to resolve …
+Build Android APK #91: Commit 466dea9 pushed by skeks547
+
+실행 후 로딩글자가 나오고 바로 강제종료가 돼.
+
+04-18 15:46:46.587  1712  1712 E SurfaceFlinger: alpha changed 1.000 -> 0.000 - Surface(name=Task=67839)/@0x30da4a2_transition-leash#23954
+04-18 15:46:46.631  6436 26953 E [AirCmd]_MediaControlStateMonitor: getActiveNotificationPackageName : notification service monitor is null
+04-18 15:46:46.631 12043 12043 E ashmem  : Pinning is deprecated since Android Q. Please use trim or other methods.
+04-18 15:46:46.637 12043 12043 E .checksheetv100: Invalid resource ID 0x00000000.
+04-18 15:46:46.736 12043 12043 E .checksheetv100: Unable to open libpenguin.so: dlopen failed: library "libpenguin.so" not found.
+04-18 15:46:46.745  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cb9 went down
+04-18 15:46:46.745  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cba went down
+04-18 15:46:46.746  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cbb went down
+04-18 15:46:46.747  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cbc went down
+04-18 15:46:46.779  4683  4683 E pageboostd: Received HALT command code 2
+04-18 15:46:46.793  2421  3488 E WindowManager: win=Window{900bda6 u0 com.sec.android.app.launcher/com.sec.android.app.launcher.activities.LauncherActivity} destroySurfaces: appStopped=true cleanupOnResume=false win.mWindowRemovalAllowed=false win.mRemoveOnExit=false win.mViewVisibility=8 caller=com.android.server.wm.ActivityRecord.destroySurfaces:25 com.android.server.wm.ActivityRecord.activityStopped:192 com.android.server.wm.ActivityClientController.activityStopped:97 android.app.IActivityClientController$Stub.onTransact:740 com.android.server.wm.ActivityClientController.onTransact:1 android.os.Binder.execTransactInternal:1462 android.os.Binder.execTransact:1401
+04-18 15:46:46.828  1712  1712 E SurfaceFlinger: alpha changed 1.000 -> 0.000 - Surface(name=16ca2b9 InputMethod)/@0x1b27f6b - animation-leash of insets_animation#23967
+04-18 15:46:46.883  1706  1711 E HeatmapThread: ECT Thread time in milliseconds: 1776494806
+04-18 15:46:46.883  1706  1711 E HeatmapThread: !@Entered the read from path function
+04-18 15:46:46.883  1706  1711 E HeatmapThread: !@Could not open '/efs/FactoryApp/extended_heatmap', errno = 13
+04-18 15:46:46.883  1706  1711 E HeatmapThread: !@Extended_heatmap efs Forced Reset
+04-18 15:46:46.883  1706  1711 E HeatmapThread: !@Read Extended_heatmap from efs is:
+04-18 15:46:46.883  1706  1711 E HeatmapThread: !@Write Extended Heatmap to efs is: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+04-18 15:46:46.884  1706  1711 E HeatmapThread: !@Could not open '/efs/FactoryApp/extended_heatmap', errno = 13
+04-18 15:46:46.884  1706  1711 E HeatmapThread: !@Could not open '/efs/FactoryApp/bsoh', errno = 13
+04-18 15:46:46.884  1706  1711 E HeatmapThread: !@ CAM Could not access BSOH EFS
+04-18 15:46:46.884  1706  1711 E HeatmapThread: !@ CAM New BSOH: 0
+--------- beginning of crash
+04-18 15:46:47.414 12043 12074 F libc    : FORTIFY: pthread_mutex_lock called on a destroyed mutex (0x7e77e03718)
+04-18 15:46:47.414 12043 12077 F libc    : FORTIFY: pthread_mutex_lock called on a destroyed mutex (0x7e77e03718)
+04-18 15:46:47.414 12043 12077 F libc    : Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 12077 (hwuiTask1), pid 12043 (SDLActivity)
+04-18 15:46:47.441  5178  5181 E cessService0:53: failed to create Unix domain socket: Operation not permitted
+04-18 15:46:47.441  4260  4266 E cessService0:52: failed to create Unix domain socket: Operation not permitted
+04-18 15:46:47.443 12101 12101 E DEBUG   : failed to readlink /proc/12077/fd/135: No such file or directory
+04-18 15:46:47.443 12101 12101 E DEBUG   : failed to readlink /proc/12077/fd/136: No such file or directory
+04-18 15:46:47.443 12101 12101 E DEBUG   : failed to readlink /proc/12077/fd/137: No such file or directory
+04-18 15:46:47.443 12101 12101 E DEBUG   : failed to readlink /proc/12077/fd/138: No such file or directory
+04-18 15:46:47.443 12101 12101 F crash_dump64: crash_dump.cpp:692] failed to get process threads: No such file or directory
+04-18 15:46:47.444  1254  1254 E tombstoned: unexpected dump type: kDebuggerdAnyIntercept
+04-18 15:46:47.444  1254  1254 E tombstoned: failed to get crash output for type kDebuggerdAnyIntercept
+04-18 15:46:47.444 12101 12101 E libc    : failed to read response to DumpRequest packet: No message of desired type
+04-18 15:46:47.444 12101 12101 E crash_dump64: failed to connected to tombstoned to report failure
+04-18 15:46:47.461  2421  2852 E InputDispatcher: channel '89bff5f org.example.checksheetv100/org.kivy.android.PythonActivity' ~ Channel is unrecoverably broken and will be disposed!
+04-18 15:46:47.463  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cbd went down
+04-18 15:46:47.478  1712  1712 E SurfaceFlinger: alpha changed 1.000 -> 0.000 - Surface(name=16ca2b9 InputMethod)/@0x1b27f6b - animation-leash of insets_animation#23968
+04-18 15:46:47.487  1712  1712 E BpTransactionCompletedListener: Failed to transact (-32)
+04-18 15:46:47.488  6436 26953 E [AirCmd]_MediaControlStateMonitor: getActiveNotificationPackageName : notification service monitor is null
+04-18 15:46:47.537  1712  1712 E SurfaceFlinger: alpha changed 1.000 -> 0.000 - Surface(name=16ca2b9 InputMethod)/@0x1b27f6b - animation-leash of insets_animation#23974
+04-18 15:46:47.745  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cbe went down
+04-18 15:46:47.746  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cbf went down
+04-18 15:46:47.748  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cc0 went down
+04-18 15:46:47.751  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cc2 went down
+04-18 15:46:47.753  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cc3 went down
+04-18 15:46:47.755  1529  1645 E minksocket: MinkIPC_QRTR_Service: client with node 1 port 6cc4 went down
