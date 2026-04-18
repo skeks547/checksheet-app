@@ -1,12 +1,12 @@
 [app]
-title = Step2-3TestRev
-package.name = checksheetstep23rev
+title = Step2-4Test
+package.name = checksheetstep24
 package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
-version = 0.4.1
-# tqdm 추가
-requirements = python3,kivy,pyjnius,openpyxl,et_xmlfile,jdcal,pysmb,pyasn1,six,tqdm
+version = 0.5
+# pycryptodome 추가
+requirements = python3,kivy,pyjnius,openpyxl,et_xmlfile,jdcal,pysmb,pyasn1,six,tqdm,pycryptodome
 orientation = portrait
 fullscreen = 0
 android.permissions = INTERNET
