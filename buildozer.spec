@@ -1,11 +1,11 @@
 [app]
-title = Step2-1Test
-package.name = checksheetstep21
+title = Step2-2Test
+package.name = checksheetstep22
 package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
-version = 0.2
-requirements = python3,kivy,pyjnius
+version = 0.3
+requirements = python3,kivy,pyjnius,openpyxl
 orientation = portrait
 fullscreen = 0
 android.permissions = INTERNET
