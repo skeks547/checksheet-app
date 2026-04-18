@@ -1,12 +1,14 @@
 [app]
-title = Step2-5Test
-package.name = checksheetstep25
+title = Step2-6Test
+package.name = checksheetstep26
 package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
-version = 0.6
-# 검증 완료된 라이브러리 + android 패키지
+version = 0.7
+# 모든 검증된 라이브러리 유지
 requirements = python3,kivy,pyjnius,openpyxl,et_xmlfile,jdcal,pysmb,pyasn1,six,tqdm,pycryptodome,android
+# [의심 포인트] pdfjs 폴더를 에셋으로 포함
+android.add_assets = pdfjs
 orientation = portrait
 fullscreen = 0
 android.permissions = INTERNET

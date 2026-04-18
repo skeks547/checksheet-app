@@ -1,14 +1,9 @@
 from kivy.app import App
 from kivy.uix.label import Label
 
-class Step2_5App(App):
+class Step2_6App(App):
     def build(self):
-        try:
-            # android 패키지 로드 시도
-            import android
-            return Label(text='Step 2-5: android package Load Success')
-        except Exception as e:
-            return Label(text=f'Step 2-5 Error: {str(e)}')
+        return Label(text='Step 2-6: Assets Included Success')
 
 if __name__ == '__main__':
-    Step2_5App().run()
+    Step2_6App().run()
