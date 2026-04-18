@@ -7,13 +7,13 @@ source.include_exts = py,png,jpg,kv,ttf,pdf,xlsx,json,html,js,css,map,ftl
 source.exclude_dirs = backup, bin, .buildozer
 version = 6.0
 
-# [泥댄겕] android 紐⑤뱢 ?좎?
+# [泥댄�? android 紐⑤�??�?
 requirements = python3,kivy,android,pyjnius,openpyxl,pysmb,pyasn1,six,tqdm,et_xmlfile,jdcal,pycryptodome
 
 orientation = portrait
 fullscreen = 0
 
-# [?섏젙] 沅뚰븳 異뺤냼
+# [??�젙] 沅뚰�??�뺤??
 android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, INTERNET
 
 android.enable_androidx = True
