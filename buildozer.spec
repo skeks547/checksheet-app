@@ -1,16 +1,16 @@
 [app]
 title = CheckSheetFinal
-package.name = checksheetv110
+package.name = checksheetv120
 package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf,pdf,xlsx,json,html,js,css,map,ftl
 source.exclude_dirs = backup, bin, .buildozer
 android.add_assets = pdfjs
-version = 11.0
+version = 12.0
 requirements = python3,kivy,android,pyjnius,openpyxl,pysmb,pyasn1,six,tqdm,et_xmlfile,jdcal,pycryptodome
 orientation = portrait
 fullscreen = 0
-android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, INTERNET
+android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE, INTERNET, ACCESS_NETWORK_STATE
 android.enable_androidx = True
 android.enable_jetifier = True
 android.api = 33
