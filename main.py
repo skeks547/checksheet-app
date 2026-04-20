@@ -21,7 +21,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.core.text import LabelBase
 
-# --- 1. 한글 폰트 설정 ---
+# --- 1. 폰트 설정 (전역) ---
 FONT_NAME = "font.ttf"
 if platform == 'android':
     FONT_NAME = os.path.join(os.path.dirname(__file__), "font.ttf")
@@ -33,7 +33,7 @@ if os.path.exists(FONT_NAME):
         font_registered = True
     except: pass
 
-# --- 2. UI 디자인 (KV 문법 완벽 교정) ---
+# --- 2. UI 디자인 (KV 문법 정밀 교정) ---
 KV_UI = """
 <Label>:
     font_name: 'Roboto' if app.font_registered else 'Roboto'
@@ -260,6 +260,10 @@ class RowWidget(BoxLayout):
     def open_pdf(self): App.get_running_app().prepare_and_open_pdf(self.item_code)
 
 class CheckSheetApp(App):
+    # [중요] 변수를 클래스 내부로 이동하여 NameError 방지
+    SETTINGS_FILE = 'settings.json'
+    LOCAL_BASE = "/sdcard/Download/CheckSheet" if platform == 'android' else os.path.join(os.getcwd(), "CheckSheet_Data")
+
     excel_path = StringProperty('')
     pdf_folder_path = StringProperty('')
     current_filename = StringProperty('파일을 선택하세요')
@@ -333,7 +337,7 @@ class CheckSheetApp(App):
         self.load_pdf_into_cache(item_code)
 
     def load_pdf_into_cache(self, item_code):
-        base_path = self.pdf_folder_path if self.pdf_folder_path else LOCAL_BASE
+        base_path = self.pdf_folder_path if self.pdf_folder_path else self.LOCAL_BASE
         src_path = os.path.join(base_path, f"{item_code}.pdf")
         if not os.path.exists(src_path):
             self.show_error_popup(f"파일 없음: {item_code}.pdf")
@@ -559,8 +563,8 @@ class CheckSheetApp(App):
                     np = os.path.join(path, file.filename).replace("\\", "/")
                     if file.isDirectory: self.open_smb_files_browser(conn, share, np, mode, parent)
                     elif mode == 'file':
-                        local = os.path.join(LOCAL_BASE, file.filename)
-                        if not os.path.exists(LOCAL_BASE): os.makedirs(LOCAL_BASE)
+                        local = os.path.join(self.LOCAL_BASE, file.filename)
+                        if not os.path.exists(self.LOCAL_BASE): os.makedirs(self.LOCAL_BASE)
                         with open(local, 'wb') as lf: conn.retrieveFile(share, np, lf)
                         self.excel_path = local; self.load_excel_data(local); self.save_settings(); pop.dismiss(); parent.dismiss()
                 b.bind(on_release=click)
@@ -591,9 +595,9 @@ class CheckSheetApp(App):
         pop.open()
 
     def load_settings(self):
-        if os.path.exists(SETTINGS_FILE):
+        if os.path.exists(self.SETTINGS_FILE):
             try:
-                with open(SETTINGS_FILE, 'r') as f:
+                with open(self.SETTINGS_FILE, 'r') as f:
                     d = json.load(f)
                     self.excel_path = d.get('excel_path', '')
                     self.pdf_folder_path = d.get('pdf_folder_path', '')
@@ -601,7 +605,7 @@ class CheckSheetApp(App):
             except: pass
 
     def save_settings(self):
-        with open(SETTINGS_FILE, 'w') as f:
+        with open(self.SETTINGS_FILE, 'w') as f:
             json.dump({'excel_path': self.excel_path, 'pdf_folder_path': self.pdf_folder_path, 'smb_config': self.smb_config}, f)
 
     def show_error_popup(self, msg): Popup(title="알림", content=Label(text=str(msg)), size_hint=(0.8, 0.4)).open()

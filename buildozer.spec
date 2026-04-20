@@ -1,12 +1,12 @@
 [app]
 title = CheckSheetFinal
-package.name = checksheetv124
+package.name = checksheetv126
 package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf,pdf,xlsx,json,html,js,css,map,ftl
 source.exclude_dirs = backup, bin, .buildozer
 android.add_assets = pdfjs
-version = 12.4
+version = 12.6
 requirements = python3,kivy,android,pyjnius,openpyxl,pysmb,pyasn1,six,tqdm,et_xmlfile,jdcal,pycryptodome
 orientation = portrait
 fullscreen = 0
